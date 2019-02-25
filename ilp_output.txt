@@ -1,0 +1,101 @@
+file_name vc_size
+vc-exact_001.hgr 132
+vc-exact_003.hgr 120
+vc-exact_005.hgr 126
+<DirEntry 'vc-exact_007.hgr'> -1
+vc-exact_009.hgr 137
+vc-exact_011.hgr 98
+<DirEntry 'vc-exact_013.hgr'> -1
+vc-exact_015.hgr 98
+vc-exact_017.hgr 101
+vc-exact_019.hgr 113
+vc-exact_021.hgr 99
+vc-exact_023.hgr 105
+vc-exact_025.hgr 145
+vc-exact_027.hgr 127
+vc-exact_029.hgr 100
+vc-exact_031.hgr 100
+vc-exact_033.hgr 112
+vc-exact_035.hgr 144
+vc-exact_037.hgr 82
+vc-exact_039.hgr 91
+vc-exact_041.hgr 100
+vc-exact_043.hgr 109
+vc-exact_045.hgr 64
+vc-exact_047.hgr 141
+vc-exact_049.hgr 128
+vc-exact_051.hgr 128
+vc-exact_053.hgr 111
+vc-exact_055.hgr 143
+vc-exact_057.hgr 126
+vc-exact_059.hgr 111
+vc-exact_061.hgr 142
+<DirEntry 'vc-exact_063.hgr'> -1
+<DirEntry 'vc-exact_065.hgr'> -1
+<DirEntry 'vc-exact_067.hgr'> -1
+<DirEntry 'vc-exact_069.hgr'> -1
+vc-exact_071.hgr 3422
+vc-exact_073.hgr 3248
+vc-exact_075.hgr 3584
+vc-exact_077.hgr 132
+vc-exact_079.hgr 131
+vc-exact_081.hgr 145
+vc-exact_083.hgr 136
+vc-exact_085.hgr 140
+vc-exact_087.hgr 140
+vc-exact_089.hgr 143
+vc-exact_091.hgr 135
+vc-exact_093.hgr 138
+vc-exact_095.hgr 138
+vc-exact_097.hgr 135
+vc-exact_099.hgr 130
+vc-exact_101.hgr 138
+vc-exact_103.hgr 132
+vc-exact_105.hgr 131
+vc-exact_107.hgr 134
+vc-exact_109.hgr 126
+vc-exact_111.hgr 130
+vc-exact_113.hgr 129
+vc-exact_115.hgr 5056
+vc-exact_117.hgr 5111
+vc-exact_119.hgr 4970
+vc-exact_121.hgr 135
+vc-exact_123.hgr 143
+vc-exact_125.hgr 136
+vc-exact_127.hgr 133
+vc-exact_129.hgr 138
+vc-exact_131.hgr 137
+vc-exact_133.hgr 141
+vc-exact_135.hgr 140
+vc-exact_137.hgr 135
+vc-exact_139.hgr 142
+vc-exact_141.hgr 140
+vc-exact_143.hgr 136
+vc-exact_145.hgr 140
+vc-exact_147.hgr 10504
+vc-exact_149.hgr 10100
+vc-exact_151.hgr 10201
+vc-exact_153.hgr 11211
+vc-exact_155.hgr 11648
+vc-exact_157.hgr 10918
+vc-exact_159.hgr 12084
+vc-exact_161.hgr 13431
+vc-exact_163.hgr 12840
+vc-exact_165.hgr 13338
+<DirEntry 'vc-exact_167.hgr'> -1
+<DirEntry 'vc-exact_169.hgr'> -1
+<DirEntry 'vc-exact_171.hgr'> -1
+<DirEntry 'vc-exact_173.hgr'> -1
+<DirEntry 'vc-exact_175.hgr'> -1
+vc-exact_177.hgr 12097
+vc-exact_179.hgr 11033
+vc-exact_181.hgr 36
+vc-exact_183.hgr 20
+vc-exact_185.hgr 187
+vc-exact_187.hgr 1747
+vc-exact_189.hgr 4402
+vc-exact_191.hgr 6674
+vc-exact_193.hgr 755
+vc-exact_195.hgr 6821
+vc-exact_197.hgr 927
+vc-exact_199.hgr 211
