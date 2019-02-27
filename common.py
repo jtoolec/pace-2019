@@ -20,9 +20,32 @@ def has_self_loop(file):
     for line in file:
         if line[0] != 'p' and line[0] != 'c':
             e = line.split()
-            if e[0] == e[1]:
+            if int(e[0]) == int(e[1]):
                 return True
     return False
+
+# simple degree 1 reduction
+# also solves trees
+def deg_one_redux(g):
+    g = g.copy()
+    vc = set()
+    keep_going = True
+    while keep_going:
+        keep_going = False
+        for v, d in g.degree():
+            if d == 1:
+                u = [u for u in g[v]][0]
+                vc.add(u)
+                leaves = []
+                for w in g[u]:
+                    if g.degree[w] == 1:
+                        leaves.append(w)
+                g.remove_node(u)
+                for w in leaves:
+                    g.remove_node(w)
+                keep_going = True
+                break
+    return (g, vc)
 
 if __name__ == "__main__":
     with os.scandir(input_dir) as dir:
