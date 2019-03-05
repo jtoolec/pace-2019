@@ -8,7 +8,6 @@ input_dir = os.path.join(script_dir, "vc-exact-public")
 
 # wrapper function to keep track of best VC found during bnb
 def solve(g):
-    ub = -1
     slv = set()
 
     # include vertices with self-loops in any VC
@@ -20,31 +19,29 @@ def solve(g):
     for v in slv:
         g.remove_node(v)
 
-    def bnb(g, current=0):
-        nonlocal ub
+    # initialize anti-graph
+    ag = nx.create_empty_copy(g)
+
+    def bnb(g, ag, current=0, ub=-1):
 
         # check if graph is empty or a single vertex
         n = len(g)
         if n <= 1:
-            if ub < 0 or current < ub:
-                ub = current
             return set()
 
         # check if graph is a single edge
         if n == 2 and g.size() == 1:
-            current += 1
-            if ub < 0 or current < ub:
-                ub = current
             return set([list(g)[0]])
 
         vc = set()
 
         # split instance into connected components if relevant
         if not nx.is_connected(g):
-            ccs = [g.subgraph(cc) for cc in nx.connected_components(g)]
+            ccs = [(g.subgraph(cc).copy(), ag.subgraph(cc).copy())
+                   for cc in nx.connected_components(g)]
 
-            for cc in ccs:
-                vc = vc.union(bnb(cc, current=current))
+            for (cc, acc) in ccs:
+                vc = vc.union(bnb(cc, acc, current=current, ub=ub))
 
             return vc
 
@@ -55,14 +52,17 @@ def solve(g):
         _, min_deg = deg_list[-1]
 
         # apply degree-one reduction if relevant
+        has_deg_one_redux = False
         if min_deg == 1:
-            g, tree_vc = c.deg_one_redux(g)
+            has_deg_one_redux = True
+            tree_vc, cover = c.deg_one_redux(g, ag)
             vc = vc.union(tree_vc)
             current += len(tree_vc)
 
-            if len(g) == 0:
-                if ub < 0 or current < ub:
-                    ub = current
+            if g.size() == 0:
+                for e in cover:
+                    g.add_edge(*e)
+                    ag.remove_edge(*e)
                 return vc
 
             deg_list = sorted([(v, d) for v, d in g.degree()],
@@ -75,34 +75,60 @@ def solve(g):
             for v in g:
                 vc.add(v)
 
+            if has_deg_one_redux:
+                for e in cover:
+                    g.add_edge(*e)
+                    ag.remove_edge(*e)
+
             return vc
 
         # branch 1: v in VC
-        in_vc = vc.copy()
-        in_g = g.copy()
-        in_vc.add(v)
-        in_g.remove_node(v)
+        in_cover = [e for e in g.edges(v)]
+        in_vc = set([v])
         in_current = current + 1
+        for e in in_cover:
+            g.remove_edge(*e)
+            ag.add_edge(*e)
+        in_result = bnb(g, ag, current=in_current, ub=ub)
+        in_current += len(in_result)
+        in_vc = in_vc.union(in_result)
+        if ub < 0 or in_current < ub:
+            ub = in_current
+        for e in in_cover:
+            g.add_edge(*e)
+            ag.remove_edge(*e)
 
         # branch 2: v is not in VC
-        out_vc = vc.copy()
-        out_g = g.copy()
+        out_cover = []
+        out_vc = set()
         out_current = current
-        for u in g[v]:
+        neighbors = [u for u in g[v]]
+        for u in neighbors:
+            out_subcover = [e for e in g.edges(u)]
+            for e in out_subcover:
+                out_cover.append(e)
+                g.remove_edge(*e)
+                ag.add_edge(*e)
             out_vc.add(u)
-            out_g.remove_node(u)
             out_current += 1
-        out_g.remove_node(v)
+        out_result = bnb(g, ag, current=out_current, ub=ub)
+        out_current += len(out_result)
+        out_vc = out_vc.union(out_result)
+        for e in out_cover:
+            g.add_edge(*e)
+            ag.remove_edge(*e)
 
-        # recursion
-        in_result = in_vc.union(bnb(in_g, current=in_current))
-        out_result = out_vc.union(bnb(out_g, current=out_current))
-        if len(in_result) < len(out_result):
-            return in_result
+        if has_deg_one_redux:
+            for e in cover:
+                g.add_edge(*e)
+                ag.remove_edge(*e)
+
+        if in_current < out_current:
+            return vc.union(in_vc)
         else:
-            return out_result
+            return vc.union(out_vc)
 
-    return slv.union(bnb(g))
+    return slv.union(bnb(g, ag))
 
 
 if __name__ == "__main__":
@@ -110,7 +136,7 @@ if __name__ == "__main__":
     #     output.write("file_name vc_size\n")
     #     with os.scandir(input_dir) as dir:
     #         for file in dir:
-    file = os.path.join(input_dir, "vc-exact_199.hgr")
+    file = os.path.join(input_dir, "vc-exact_145.hgr")
     with open(file, encoding="latin-1") as f:
         g = c.parse_graph(f)
         vc = solve(g)

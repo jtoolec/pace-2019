@@ -26,26 +26,32 @@ def has_self_loop(file):
 
 # simple degree 1 reduction
 # also solves trees
-def deg_one_redux(g):
-    g = g.copy()
+def deg_one_redux(g, ag):
+    # g = g.copy()
     vc = set()
     keep_going = True
+    cover = []
     while keep_going:
         keep_going = False
         for v, d in g.degree():
             if d == 1:
                 u = [u for u in g[v]][0]
                 vc.add(u)
-                leaves = []
-                for w in g[u]:
-                    if g.degree[w] == 1:
-                        leaves.append(w)
-                g.remove_node(u)
-                for w in leaves:
-                    g.remove_node(w)
+                # leaves = []
+                # for w in g[u]:
+                #     if g.degree[w] == 1:
+                #         leaves.append(w)
+                # g.remove_node(u)
+                # for w in leaves:
+                #     g.remove_node(w)
+                subcover = [e for e in g.edges(u)]
+                for e in subcover:
+                    cover.append(e)
+                    g.remove_edge(*e)
+                    ag.add_edge(*e)
                 keep_going = True
                 break
-    return (g, vc)
+    return (vc, cover)
 
 if __name__ == "__main__":
     with os.scandir(input_dir) as dir:
