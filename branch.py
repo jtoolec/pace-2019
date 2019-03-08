@@ -1,5 +1,6 @@
 import os
 import operator
+from timeit import default_timer as timer
 import networkx as nx
 import common as c
 
@@ -82,6 +83,19 @@ def solve(g):
 
             return vc
 
+        # bound check from Lemma 2.3 of Cygan et al.
+        if max_deg <= ub and (len(g) > (ub**2 + ub) or g.size() > ub**2):
+            # add all vertices to the VC, effectively terminating the branch
+            for v in g:
+                vc.add(v)
+
+            if has_deg_one_redux:
+                for e in cover:
+                    g.add_edge(*e)
+                    ag.remove_edge(*e)
+
+            return vc
+
         # branch 1: v in VC
         in_cover = [e for e in g.edges(v)]
         in_vc = set([v])
@@ -136,11 +150,13 @@ if __name__ == "__main__":
     #     output.write("file_name vc_size\n")
     #     with os.scandir(input_dir) as dir:
     #         for file in dir:
-    file = os.path.join(input_dir, "vc-exact_145.hgr")
+    file = os.path.join(input_dir, "vc-exact_079.hgr")
     with open(file, encoding="latin-1") as f:
+        start = timer()
         g = c.parse_graph(f)
         vc = solve(g)
-        # data = ' '.join([str(file.name), len(vc)])
+        end = timer()
+        # data = ' '.join([str(file.name), str(len(vc))])
         # output.write(data + '\n')
         # print(str(file.name) + " done")
-        print(len(vc))
+        print(len(vc), (end - start))
