@@ -23,7 +23,20 @@ def solve(g):
     # initialize anti-graph
     ag = nx.create_empty_copy(g)
 
-    def bnb(g, ag, current=0, ub=-1):
+    # start timer for branching
+    init = timer()
+    TIMEOUT = 5 * 60
+
+    # track size of best solution encountered
+    best_sol = len(g)
+
+    def bnb(g, ag, current=0, ub=-1, is_split=False):
+        nonlocal best_sol
+
+        # check if branching has timed out
+        # if it has, error out with size of best solution encountered
+        if timer() - init > TIMEOUT:
+            raise ValueError(best_sol + len(slv))
 
         # check if graph is empty or a single vertex
         n = len(g)
@@ -38,11 +51,35 @@ def solve(g):
 
         # split instance into connected components if relevant
         if not nx.is_connected(g):
-            ccs = [(g.subgraph(cc).copy(), ag.subgraph(cc).copy())
-                   for cc in nx.connected_components(g)]
+            # ccs = [(g.subgraph(cc).copy(), ag.subgraph(cc).copy())
+            #        for cc in nx.connected_components(g)]
 
-            for (cc, acc) in ccs:
-                vc = vc.union(bnb(cc, acc, current=current, ub=ub))
+            ccs = [[v for v in g.subgraph(cc)] for cc in nx.connected_components(g)]
+
+            # for (cc, acc) in ccs:
+            #     vc = vc.union(bnb(cc, acc, current=current, ub=ub, is_split=True))
+
+            for cc in ccs:
+                excluded_vertices = list(set([v for v in g]) - set(cc))
+                excluded_edges = []
+                for v in excluded_vertices:
+                    v_edges = [e for e in g.edges(v)]
+                    excluded_edges += v_edges
+                    for e in v_edges:
+                        ag.add_edge(*e)
+                    g.remove_node(v)
+
+                vc = vc.union(bnb(g, ag, current=current, ub=ub, is_split=True))
+
+                for v in excluded_vertices:
+                    g.add_node(v)
+                for e in excluded_edges:
+                    g.add_edge(*e)
+                    ag.remove_edge(*e)
+
+
+            if not is_split and len(vc) < best_sol:
+                best_sol = len(vc)
 
             return vc
 
@@ -64,6 +101,8 @@ def solve(g):
                 for e in cover:
                     g.add_edge(*e)
                     ag.remove_edge(*e)
+                if not is_split and len(vc) < best_sol:
+                    best_sol = len(vc)
                 return vc
 
             deg_list = sorted([(v, d) for v, d in g.degree()],
@@ -103,7 +142,7 @@ def solve(g):
         for e in in_cover:
             g.remove_edge(*e)
             ag.add_edge(*e)
-        in_result = bnb(g, ag, current=in_current, ub=ub)
+        in_result = bnb(g, ag, current=in_current, ub=ub, is_split=is_split)
         in_current += len(in_result)
         in_vc = in_vc.union(in_result)
         if ub < 0 or in_current < ub:
@@ -111,6 +150,8 @@ def solve(g):
         for e in in_cover:
             g.add_edge(*e)
             ag.remove_edge(*e)
+        if not is_split and len(vc.union(in_vc)) < best_sol:
+            best_sol = len(vc.union(in_vc))
 
         # branch 2: v is not in VC
         out_cover = []
@@ -125,7 +166,7 @@ def solve(g):
                 ag.add_edge(*e)
             out_vc.add(u)
             out_current += 1
-        out_result = bnb(g, ag, current=out_current, ub=ub)
+        out_result = bnb(g, ag, current=out_current, ub=ub, is_split=is_split)
         out_current += len(out_result)
         out_vc = out_vc.union(out_result)
         for e in out_cover:
@@ -140,23 +181,40 @@ def solve(g):
         if in_current < out_current:
             return vc.union(in_vc)
         else:
-            return vc.union(out_vc)
+            vc = vc.union(out_vc)
+            if not is_split and len(vc) < best_sol:
+                best_sol = len(vc)
+            return vc
 
     return slv.union(bnb(g, ag))
 
 
 if __name__ == "__main__":
-    # with open("bnb_output.txt", 'w') as output:
-    #     output.write("file_name vc_size\n")
-    #     with os.scandir(input_dir) as dir:
-    #         for file in dir:
-    file = os.path.join(input_dir, "vc-exact_079.hgr")
-    with open(file, encoding="latin-1") as f:
-        start = timer()
-        g = c.parse_graph(f)
-        vc = solve(g)
-        end = timer()
-        # data = ' '.join([str(file.name), str(len(vc))])
-        # output.write(data + '\n')
-        # print(str(file.name) + " done")
-        print(len(vc), (end - start))
+    with open("bnb_output.txt", 'w') as output:
+        output.write("file_name vc_size run_time\n")
+        with os.scandir(input_dir) as dir:
+            for file in dir:
+    # file = os.path.join(input_dir, "vc-exact_009.hgr")
+                with open(file, encoding="latin-1") as f:
+                    start = timer()
+                    g = c.parse_graph(f)
+                    try:
+                        vc = solve(g)
+                        sol_found = True
+                    except ValueError as err:
+                        sol_found = False
+                        vc = err.args[0]
+                    except RuntimeError:
+                        sol_found = False
+                        vc = -1
+                    end = timer()
+
+                    if sol_found:
+                        sol = len(vc)
+                    else:
+                        sol = vc
+                    run_time = end - start
+                    data = ' '.join([str(file.name), str(sol), str(run_time)])
+                    output.write(data + '\n')
+                    print(str(file.name) + " done")
+                    print(sol, run_time)
