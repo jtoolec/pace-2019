@@ -25,7 +25,7 @@ def solve(g):
 
     # start timer for branching
     init = timer()
-    TIMEOUT = 5 * 60
+    TIMEOUT = 2 * 60
 
     # track size of best solution encountered
     best_sol = len(g)
@@ -49,65 +49,24 @@ def solve(g):
 
         vc = set()
 
-        # split instance into connected components if relevant
-        if not nx.is_connected(g):
-            # ccs = [(g.subgraph(cc).copy(), ag.subgraph(cc).copy())
-            #        for cc in nx.connected_components(g)]
-
-            ccs = [[v for v in g.subgraph(cc)] for cc in nx.connected_components(g)]
-
-            # for (cc, acc) in ccs:
-            #     vc = vc.union(bnb(cc, acc, current=current, ub=ub, is_split=True))
-
-            for cc in ccs:
-                excluded_vertices = list(set([v for v in g]) - set(cc))
-                excluded_edges = []
-                for v in excluded_vertices:
-                    v_edges = [e for e in g.edges(v)]
-                    excluded_edges += v_edges
-                    for e in v_edges:
-                        ag.add_edge(*e)
-                    g.remove_node(v)
-
-                vc = vc.union(bnb(g, ag, current=current, ub=ub, is_split=True))
-
-                for v in excluded_vertices:
-                    g.add_node(v)
-                for e in excluded_edges:
-                    g.add_edge(*e)
-                    ag.remove_edge(*e)
-
-
-            if not is_split and len(vc) < best_sol:
-                best_sol = len(vc)
-
-            return vc
-
-        # get relevant instance info
-        deg_list = sorted([(v, d) for v, d in g.degree()],
-                          key=operator.itemgetter(1), reverse=True)
-        v, max_deg = deg_list[0]
-        _, min_deg = deg_list[-1]
-
         # apply degree-one reduction if relevant
         has_deg_one_redux = False
-        if min_deg == 1:
-            has_deg_one_redux = True
-            tree_vc, cover = c.deg_one_redux(g, ag)
-            vc = vc.union(tree_vc)
-            current += len(tree_vc)
+        for _, d in g.degree():
+            if d == 1:
+                has_deg_one_redux = True
+                tree_vc, cover = c.deg_one_redux(g, ag)
+                vc = vc.union(tree_vc)
+                current += len(tree_vc)
 
-            if g.size() == 0:
-                for e in cover:
-                    g.add_edge(*e)
-                    ag.remove_edge(*e)
-                if not is_split and len(vc) < best_sol:
-                    best_sol = len(vc)
-                return vc
+                if g.size() == 0:
+                    for e in cover:
+                        g.add_edge(*e)
+                        ag.remove_edge(*e)
+                    if not is_split and len(vc) < best_sol:
+                        best_sol = len(vc)
+                    return vc
 
-            deg_list = sorted([(v, d) for v, d in g.degree()],
-                              key=operator.itemgetter(1), reverse=True)
-            v, max_deg = deg_list[0]
+                break
 
         # simple bound check
         if ub > 0 and current >= ub:
@@ -135,13 +94,75 @@ def solve(g):
 
             return vc
 
-        # branch 1: v in VC
-        in_cover = [e for e in g.edges(v)]
-        in_vc = set([v])
-        in_current = current + 1
-        for e in in_cover:
-            g.remove_edge(*e)
-            ag.add_edge(*e)
+        # split instance into connected components if relevant
+        if not nx.is_connected(g):
+            # ccs = [(g.subgraph(cc).copy(), ag.subgraph(cc).copy())
+            #        for cc in nx.connected_components(g)]
+
+            ccs = [[v for v in g.subgraph(cc)] for cc in nx.connected_components(g)]
+
+            # for (cc, acc) in ccs:
+            #     vc = vc.union(bnb(cc, acc, current=current, ub=ub, is_split=True))
+
+            for cc in ccs:
+                excluded_vertices = list(set([v for v in g]) - set(cc))
+                excluded_edges = []
+                for v in excluded_vertices:
+                    v_edges = [e for e in g.edges(v)]
+                    excluded_edges += v_edges
+                    for e in v_edges:
+                        ag.add_edge(*e)
+                    g.remove_node(v)
+
+                cc_vc = bnb(g, ag, current=current, ub=ub, is_split=True)
+                vc = vc.union(cc_vc)
+                current += len(cc_vc)
+
+                for v in excluded_vertices:
+                    g.add_node(v)
+                for e in excluded_edges:
+                    g.add_edge(*e)
+                    ag.remove_edge(*e)
+
+            if has_deg_one_redux:
+                for e in cover:
+                    g.add_edge(*e)
+                    ag.remove_edge(*e)
+
+            if not is_split and len(vc) < best_sol:
+                best_sol = len(vc)
+
+            return vc
+
+        # get relevant instance info
+        deg_list = sorted([(v, d) for v, d in g.degree()],
+                          key=operator.itemgetter(1), reverse=True)
+        v, max_deg = deg_list[0]
+
+        # find mirrors of v
+        neighbors = [u for u in g[v]]
+        second_neighbors = c.neighborhood(g, v, 2)
+        mirrors = [v] # always include v itself for branching
+        for u in second_neighbors:
+            neighbor_diff = list(set(neighbors) - set([w for w in g[u]]))
+            s = len(neighbor_diff)
+            if s == 0:
+                mirrors.append(u)
+            else:
+                max_edges = (s * (s + 1)) / 2
+                if g.subgraph(neighbor_diff).size() == max_edges:
+                    mirrors.append(u)
+
+        # branch 1: M[v] in VC
+        in_cover = []
+        in_vc = set(mirrors)
+        in_current = current + len(in_vc)
+        for u in mirrors:
+            in_subcover = [e for e in g.edges(u)]
+            for e in in_subcover:
+                in_cover.append(e)
+                g.remove_edge(*e)
+                ag.add_edge(*e)
         in_result = bnb(g, ag, current=in_current, ub=ub, is_split=is_split)
         in_current += len(in_result)
         in_vc = in_vc.union(in_result)
@@ -153,11 +174,10 @@ def solve(g):
         if not is_split and len(vc.union(in_vc)) < best_sol:
             best_sol = len(vc.union(in_vc))
 
-        # branch 2: v is not in VC
+        # branch 2: N(v) in VC
         out_cover = []
         out_vc = set()
         out_current = current
-        neighbors = [u for u in g[v]]
         for u in neighbors:
             out_subcover = [e for e in g.edges(u)]
             for e in out_subcover:
@@ -172,6 +192,8 @@ def solve(g):
         for e in out_cover:
             g.add_edge(*e)
             ag.remove_edge(*e)
+        # if not is_split and len(vc.union(out_vc)) < best_sol:
+        #     best_sol = len(vc.union(out_vc))
 
         if has_deg_one_redux:
             for e in cover:
@@ -194,7 +216,7 @@ if __name__ == "__main__":
         output.write("file_name vc_size run_time\n")
         with os.scandir(input_dir) as dir:
             for file in dir:
-    # file = os.path.join(input_dir, "vc-exact_009.hgr")
+    # file = os.path.join(input_dir, "vc-exact_075.hgr")
                 with open(file, encoding="latin-1") as f:
                     start = timer()
                     g = c.parse_graph(f)

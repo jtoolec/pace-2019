@@ -24,6 +24,12 @@ def has_self_loop(file):
                 return True
     return False
 
+# return nth neighborhood of a vertex
+# taken from https://stackoverflow.com/questions/22742754/finding-the-n-degree-neighborhood-of-a-node
+def neighborhood(g, v, n):
+    path_lengths = nx.shortest_path_length(g, source=v)
+    return [u for u, l in path_lengths.items() if l == n]
+
 # simple degree 1 reduction
 # also solves trees
 def deg_one_redux(g, ag):
