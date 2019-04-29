@@ -32,7 +32,7 @@ def neighborhood(g, v, n):
 
 # simple degree 1 reduction
 # also solves trees
-def deg_one_redux(g, ag):
+def deg_one_redux(g, in_place=True):
     # g = g.copy()
     vc = set()
     keep_going = True
@@ -43,21 +43,25 @@ def deg_one_redux(g, ag):
             if d == 1:
                 u = [u for u in g[v]][0]
                 vc.add(u)
-                # leaves = []
-                # for w in g[u]:
-                #     if g.degree[w] == 1:
-                #         leaves.append(w)
-                # g.remove_node(u)
-                # for w in leaves:
-                #     g.remove_node(w)
-                subcover = [e for e in g.edges(u)]
-                for e in subcover:
-                    cover.append(e)
-                    g.remove_edge(*e)
-                    ag.add_edge(*e)
+                if in_place:
+                    subcover = [e for e in g.edges(u)]
+                    for e in subcover:
+                        cover.append(e)
+                        g.remove_edge(*e)
+                else:
+                    leaves = []
+                    for w in g[u]:
+                        if g.degree[w] == 1:
+                            leaves.append(w)
+                    g.remove_node(u)
+                    for w in leaves:
+                        g.remove_node(w)
                 keep_going = True
                 break
-    return (vc, cover)
+    if in_place:
+        return (vc, cover)
+    else:
+        return vc
 
 if __name__ == "__main__":
     with os.scandir(input_dir) as dir:

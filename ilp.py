@@ -1,4 +1,5 @@
 import os
+from timeit import default_timer as timer
 import pulp
 
 script_dir = os.path.dirname(__file__)
@@ -9,6 +10,7 @@ with open("ilp_output.txt", 'w') as output:
     with os.scandir(input_dir) as dir:
         for file in dir:
             with open(file, encoding="latin-1") as f:
+                start = timer()
                 prob = pulp.LpProblem("VC", pulp.LpMinimize)
                 for line in f:
                     if line[0] == 'p':
@@ -25,11 +27,14 @@ with open("ilp_output.txt", 'w') as output:
                 #pulp.LpSolverDefault.msg = 1
                 try: # attempt to solve ILP
                     prob.solve()
+                    end = timer()
+                    run_time = end - start
                     if prob.status != 1: # check if prob is optimal
                         data = ' '.join([str(file.name), '0'])
                     else:
                         data = ' '.join([str(file.name),
-                                         str(int(pulp.value(prob.objective)))])
+                                         str(int(pulp.value(prob.objective))),
+                                         str(run_time)])
                     output.write(data + '\n')
                 except: # continue even if solver errors out
                     data = ' '.join([str(file.name), '-1'])
